@@ -1,0 +1,43 @@
+import(methods)
+
+importMethodsFrom(marray, lines, points)
+
+importFrom(BiocGenerics, residuals)
+importFrom(Biobase, exprs)
+importFrom(CGHbase, segmented, probloss, probnorm, probgain, probamp)
+importFrom(graphics, abline, box, polygon)
+importFrom(grDevices, dev.off, jpeg, pdf)
+importFrom(ic.infer, ic.weights, pbetabar)
+importFrom(quadprog, solve.QP)
+importFrom(Rcsdp, csdp)
+importFrom(stats, lm, p.adjust, pf, quantile, rnorm, runif, vcov)
+importFrom(stats4, coef, summary, plot)
+importFrom(utils, combn, head)
+
+export("plrs.sim","plrs.cb","plrs.series")
+exportClasses(
+     "plrs",
+     "plrs.select",
+     "plrs.series" 
+)
+exportMethods(
+    "coef",
+    "fitted",
+    "effects",
+    "knots",
+    "model.matrix",
+    "plot",
+    "predict",
+    "print",
+    "residuals",
+    "show",
+    "summary"
+)
+export(
+	"criteria",
+	"modify.conf",
+	"plrs",
+	"plrs.select",
+	"plrs.test"
+)
+

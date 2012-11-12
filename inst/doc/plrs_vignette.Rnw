@@ -1,0 +1,404 @@
+\documentclass[11pt]{article}
+
+%\VignetteIndexEntry{plrs}
+%\VignetteDepends{}
+%\VignetteKeywords{Piecewise Linear Regression Splines for the association between DNA copy number and gene expression.}
+%\VignettePackage{plrs}
+
+\usepackage{geometry}
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm, bottom=2.5cm}
+
+\newcommand{\plrs}{\texttt{PLRS}}
+\SweaveOpts{keep.source=TRUE}
+
+
+\title{\plrs \\ Piecewise Linear Regression Splines for \\
+the association between DNA copy number and \\ gene expression}
+\author{Gwena\"el G.R. Leday\\
+\\
+\texttt{g.g.r.leday@vu.nl}\\
+\\
+\normalsize{Department of Mathematics, VU University}\\
+\normalsize{De Boelelaan 1081a, 1081 HV Amsterdam, The Netherlands}\\}
+\date{}
+
+
+\begin{document}
+
+\maketitle
+
+\null
+\null
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+\null
+\indent The \plrs~package implements the methodology described by \cite{leday2012} for the joint
+analysis of DNA copy number and mRNA expression.
+The framework employs piecewise linear regression splines (PLRS), a broad class of interpretable
+models, to model \textsl{cis}-relationships between the two molecular levels. \\
+In the present vignette, we provide guidance for:
+\begin{enumerate}
+	\item The analysis of a single DNA-mRNA relationship
+		\begin{itemize}
+			\item model specification and fitting,
+			\item selection of an appropriate model,
+			\item testing the strength of the association and
+			\item obtaining uniform confidence bands.
+		\end{itemize}
+	\item The analysis of multiple DNA-mRNA relationships
+\end{enumerate}
+\null
+We first introduce the breast cancer data used to illustrate this vignette. \\
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Breast cancer data}
+\null
+We use the breast cancer data of \cite{neve2006} that are available from the Bioconductor package
+``Neve2006''. aCGH and gene expression for 50 samples (cell lines) were profiled with an OncoBAC
+and Affymetrix HG-U133A arrays. We preprocessed and matched data as follows.
+Data were segmented with the CBS algorithm of \cite{olshen2004} and discretized with CGHcall
+\cite{vandeWiel2007} (also available from Bioconductor). Matching of features was done using
+the Bioconductor package \texttt{sigaR} \cite{vanWieringen2012} and the \textit{distanceAny}
+method with a window of 10,000 bp. The present package includes preprocessed data for
+chromosome 17 only.\\
+
+\noindent Data are loaded in the following way:
+
+<<>>=
+library(plrs)
+data(neveCN17)
+data(neveGE17)
+@
+\null
+
+This loads to the current environment an ``ExpressionSet'' object \texttt{neveGE17} and
+a ``cghCall'' object \texttt{neveCN17}, which contain \textbf{preprocessed} expression and copy number
+data with \textbf{matched} features:
+
+<<>>=
+neveGE17
+neveCN17
+@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Analysis of a single DNA-mRNA relationship}
+\null
+In this section, we focus on a single \textsl{cis}-effect and show how to specify
+and fit a model. Procedures for selecting an appropriate model, testing
+the association and obtaining confidence intervals for the mean response are presented.\\
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Obtain data for a single gene}
+\null
+We choose gene PITPNA for illustration:
+
+<<>>=
+# Index of gene PITPNA
+idx <- which(fData(neveGE17)$Symbol=="PITPNA")[1]
+@
+<<>>=
+# Obtain vectors of gene expression (normalized) and
+# copy number (segmented and called) data
+rna <- exprs(neveGE17)[idx,]
+cghseg <- segmented(neveCN17)[idx,]
+cghcall <- calls(neveCN17)[idx,]
+@
+<<>>=
+# Obtain vectors of posterior membership probabilities
+probloss <- probloss(neveCN17)[idx,]
+probnorm <- probnorm(neveCN17)[idx,]
+probgain <- probgain(neveCN17)[idx,]
+probamp <- probamp(neveCN17)[idx,]
+@
+\null
+Posterior probabilities are used for determining knots (or change points) of the model.
+Their calculation is explained in \cite{leday2012}. \\
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Number of observations per state}
+\null
+
+For a given gene, PLRS accommodates \textsl{differential} DNA-mRNA relationships across
+the different types of genomic aberrations or \textsl{states}. Presently, we (only) distinguish
+four of them: \textbf{loss} (coded as -1), \textbf{normal} (0), \textbf{gain} (1) and \textbf{amplification} (2).
+To ensure that the model is identifiable, the sample size for each state needs not to be too
+small. A minimum number of three samples is required for estimation, however any higher number
+may be chosen/preferred.
+<<>>=
+# Check: how many observations per state?
+table(cghcall)
+@
+Here, it is possible to fit a 3-state model. If the minimum number of observations is not fulfilled for
+a given state, there are two possibilities: discard data corresponding to the given state or merging it
+to an adjacent one. The function \texttt{modify.conf()} accommodates these two options (see below).
+With this function one can actually control the minimum number of samples per state.
+<<>>=
+# Set the minimum to 4 observations per state
+cghcall2 <- modify.conf(cghcall, min.obs=4, discard=FALSE)
+table(cghcall2)
+
+# Set the minimum to 4 observations per state
+cghcall2 <- modify.conf(cghcall, min.obs=4, discard=TRUE)
+table(cghcall2)
+@
+\null
+In practice, the user does not have to call directly \texttt{modify.conf()} as it is implemented
+internally in function \texttt{plrs()}, which is used to fit a model.
+However, one needs to be aware that the minimum number of observations per state (specified via
+arguments \texttt{min.obs} and \texttt{discard.obs} in \texttt{plrs()}) has a strong
+influence on the resulting model.\\
+\null
+\null
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Model fitting}
+\null
+Function \texttt{plrs()} allows the fitting of a PLRS model. Different types of models may be
+specified conveniently. For instance, one may choose to fit a \textit{continuous} PLRS (i.e.
+with no state-specific intercepts or discontinuities) or to change the type of restrictions on
+parameters or simply leave them out.
+Although we recommend users to use default argument values, we below describe how to specify
+alternative types of models.\\
+
+\noindent The followings arguments of function \texttt{plrs()} offer flexibility for modeling:
+\begin{itemize}
+	\item \texttt{continuous = TRUE} or \texttt{FALSE} (default)\\
+	Specify whether state-specific intercepts should be included.
+	\item \texttt{constr = TRUE} (default) or \texttt{FALSE}\\
+	Specify whether inequality constraints on parameter should be applied or not.
+	\item \texttt{constr.slopes = 1} or \texttt{2} (default)\\
+	Specify the type of constraints on slopes; options are:
+	\begin{enumerate}
+		\item \texttt{constr.slopes = 1} forces all slopes to be non-negative.
+		\item \texttt{constr.slopes = 2} forces the slope of the "normal" state (coded 0) to
+		be non-negative while all others are forced to be at least equal to the latter.
+	\end{enumerate}
+	\item \texttt{constr.intercepts = TRUE} (default) or \texttt{FALSE}\\
+	Specify whether state-specific intercepts are to be non-negative.
+\end{itemize}
+\noindent Note that when \texttt{constr = FALSE}, \texttt{constr.slopes} and
+\texttt{constr.intercepts} have no effect.\\
+\\
+\\
+With default settings (recommended):
+\begin{center}
+\setkeys{Gin}{width=0.5\textwidth}
+<<fig=TRUE>>=
+# Fit a model
+model <- plrs(rna, cghseg, cghcall, probloss, probnorm, probgain, probamp)
+model
+plot(model)
+@
+\end{center}
+\null
+The \texttt{plrs()} function returns an S4 object of class ``plrs''. Various generic functions
+have been defined on this class:
+\begin{itemize}
+	\item Functions \texttt{print()} and \texttt{summary()} display information about the model
+	(e.g. estimated coefficients, type of constraints, etc...).
+	\item Function \texttt{plot()} displays the fit of the PLRS model along with data.
+	Segmented copy number is on x-axis while (normalized) gene expression is on y-axis;
+	colors indicate the different aberration states, namely ``loss'' (red), ``normal''
+	(blue) and ``gain'' (green); the black line gives the fit of the PLRS model.
+	Colors and symbols may be changed via the appropriate arguments of function \texttt{plrs()}.
+	Note that the argument \texttt{lin}, if set to \texttt{TRUE}, will additionally display a
+	dashed (default) line giving the fit of the simple linear model.
+	\item Other useful functions include \texttt{coef()}, \texttt{fitted()}, \texttt{residuals()},
+	\texttt{model.matrix()}, \texttt{predict()} and \texttt{knots()}. These are standard functions.
+	Information about these can be found in associated help files.
+\end{itemize}
+\null
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Select an appropriate model}
+\null
+Model selection is carried out by \texttt{plrs.select()}, which takes has input an object of
+class ``plrs''. Possible model selection criteria are \texttt{OSAIC}, \texttt{AIC}, \texttt{AICC}
+and \texttt{BIC}. When the model is constrained \texttt{OSAIC} is the only appropriate one.
+If the model has no restrictions on parameters, \texttt{OSAIC} and \texttt{AIC} are equivalent.
+See help file and associated references for more information.
+
+\begin{center}
+\setkeys{Gin}{width=0.5\textwidth}
+<<fig=TRUE>>=
+# Model selection
+modelSelection <- plrs.select(model)
+summary(modelSelection)
+
+# Plot selected model
+plot(modelSelection)
+@
+\end{center}
+\null
+The function \texttt{plrs.select()} returns an S4 object of class ``plrs.select'' (here
+\texttt{modelSelection}), which contains information on model selection. Slot \texttt{model}
+contains the selected model as a ``plrs'' object:
+<<>>=
+selectedModel <- modelSelection@model
+selectedModel
+@
+\null
+
+Although \texttt{model} and \texttt{selectedModel} are both objects of class ``plrs'',
+generic functions defined on this class make implicitly the distinction between
+objects resulting from functions \texttt{plrs()} and \texttt{plrs.select()}
+(see above; ``\texttt{Selected spline coefficients}'').\\
+
+$\Rightarrow$ It is important to note that, for correct inference, subsequent test and confidence
+intervals must be computed on the \textbf{full} model rather than the \textbf{selected} one.
+Therefore, we forced functions \texttt{plrs.test()} and \texttt{plrs.cb()} (used hereafter)
+to operate on the full model, regardless of the input model. This implies that inference
+results are the same with either objects (see below).
+If one wishes to obtain results for the selected model, set \texttt{selectedModel@selected} to \texttt{FALSE}
+and then apply the aforementioned functions.
+\null
+
+%This provides correct inference  the user to continue the analysis with either \texttt{model}
+%or \texttt{selectedModel}. 
+%This distinction is important because subsequent statistical inferences (tests, confidence
+%intervals, ...) should be based on the full model rather than the selected one. Doing
+%otherwise would naively suggests that the form of the relationship is known \textsl{a priori}.
+%Hence, one should continue the analysis with the object \texttt{model}, rather than
+%\texttt{selectedModel}. However, for practical convenience the \texttt{PLRS} package allows
+%to continue the analysis with \texttt{selectedModel} and keep information from the selection
+%procedure.
+%To do so, generic functions associated with the class of objects ``plrs'' make implicitly
+%the distinction between full and selected models, i.e. between objects resulting from
+%\texttt{plrs()} and those from \texttt{plrs.select()}. This can be seen when objects are printed
+%for example (see above; ``\texttt{Selected spline coefficients}''). Thereby, function
+%\texttt{plrs.test}, which will be used for testing model parameters, always consider the full model
+%and tests the association in its generality even though a selected model has been provided.
+%Similarly, function \texttt{plrs.cb} determine confidence intervals on the mean response based on
+%the full model.
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Testing the strength of the association}
+\null
+
+The function \texttt{plrs.test()} implements a likelihood ratio test to evaluate the effect
+of DNA copy number on expression. It tests the hypothesis that all parameters (except the
+overall intercept) of the PLRS model equal 0. See \cite{gromping2010, leday2012} and associated
+references for more details on the test.
+The function \texttt{plrs.test()} takes as input an object class ``plrs'' and outputs an object
+from the same class. Testing results are contained in slot \texttt{test}.
+
+<<>>=
+# Testing the full model with
+model <- plrs.test(model, alpha=0.05)
+model
+
+# or with
+selectedModel <- plrs.test(selectedModel, alpha=0.05)
+selectedModel
+
+# Testing the selected model
+selectedModel2 <- selectedModel
+selectedModel2@selected <- FALSE
+plrs.test(selectedModel2, alpha=0.05)
+@
+\null
+
+The object \texttt{selectedModel} now contains information on testing, which are
+consequently displayed when printing.\\
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Uniform confidence bands}
+\null
+Confidence intervals for the spline are computed with function \texttt{plrs.cb}. Again, the
+function requires an object of class ``plrs''. However, the input object must result from
+function \texttt{plrs.test()}). This is because information from the test is required
+(mixture's weights). \texttt{plrs.cb} outputs an object of class ``plrs'' and computed lower and
+upper bounds for the mean response are stored in slot \texttt{cb}.
+
+\begin{center}
+\setkeys{Gin}{width=0.5\textwidth}
+<<fig=TRUE>>=
+# Compute and plot CBs
+selectedModel <- plrs.cb(selectedModel, alpha=0.05)
+
+str(selectedModel@cb)
+
+plot(selectedModel)
+@
+\end{center}
+\null
+Confidence bands are automatically plotted. Color may be change with input arguments \texttt{col.cb}.
+For example:
+\begin{center}
+\setkeys{Gin}{width=0.5\textwidth}
+<<fig=TRUE>>=
+plot(selectedModel, col.pts="black", col.cb="pink")
+@
+\end{center}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Analysis of multiple DNA-mRNA relationships}
+\null
+Function \texttt{plrs.series()} allows to apply the different aforementioned procedures to multiple
+relationships. Input data can be given as \emph{matrix} objects or \emph{ExpressionSet} and
+\emph{cghCall} objects. We now show how to: 1) implement the PLRS screening test and 2) implement the
+model selection procedure. For the purpose of speed, we work on a subset of chromosome 17 (first 200
+features).
+
+<<>>=
+# Testing the full model, no model selection (fast)
+neveSeries <- plrs.series(neveGE17[1:200,], neveCN17[1:200,], control.select=NULL)
+
+# Testing the full model and applying model selection
+neveSeries2 <- plrs.series(neveGE17[1:200,], neveCN17[1:200,])
+@
+
+Function \texttt{plrs.series()} has arguments \texttt{control.model}, \texttt{control.select} and
+\texttt{control.test}, which allows to specify the type of model, model selection and whether
+the test and confidence bands should be computed. Argument \texttt{control.output} allows the user
+to save each ``plrs'' objects and/or associated plot in the working directory.\\
+\texttt{plrs.series()} outputs an object of class ``plrs.series''. Generic functions \texttt{print()}
+and \texttt{summary()} display information on fitted models, selected models and/or the testing procedure.
+
+\newpage
+<<>>=
+# Summary of screening test
+neveSeries
+summary(neveSeries)
+
+# Summary of screening test and model selection
+neveSeries2
+summary(neveSeries2)
+@
+
+\noindent Results of testing and model selection procedures are obtained as follows:
+
+<<>>=
+# Testing results
+head(neveSeries@test)
+head(neveSeries2@test)
+
+# Coefficients of selected models
+head(neveSeries2@coefficients)
+
+@
+
+
+
+\newpage
+\bibliographystyle{plain}
+\bibliography{mybib}
+
+\end{document}
