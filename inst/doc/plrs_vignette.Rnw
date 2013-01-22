@@ -49,16 +49,150 @@ In the present vignette, we provide guidance for:
 	\item The analysis of multiple DNA-mRNA relationships
 \end{enumerate}
 \null
-We first introduce the breast cancer data used to illustrate this vignette. \\
+We first provide an short explanation on data preparation and
+introduce the breast cancer data used to illustrate this vignette. \\
 
 \newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Data preparation}
+\null
+Data preparation consists in (1) preprocessing gene expression and aCGH data, and (2) matching their features.
+In the following, we give a brief overview on how to proceed with R.
+
+\subsection{Creating an ``ExpressionSet'' object}
+\null
+We assume that the user is familiar with microarray gene expression data and knows how to normalize these
+with appropriate R/Bioconductor packages. Consider the matrix (features $\times$ samples) of normalized gene expression \texttt{exprMat}
+and associated \textsl{data.frame} \texttt{exprAnn} containing annotations of features (such as chromosome number, start bp, end bp, symbol, ...).
+One can create an ``ExpressionSet'' object as follows:\\
+\\
+\texttt{
+GE <- new("ExpressionSet", exprs=exprMat)\\
+fData(GE) <- data.frame(Chr=exprAnn\$Chr, Start=exprAnn\$Start, \\
+End=exprAnn\$End, Symbol=exprAnn\$Symbol)\\
+rownames(fData(verhaakGEraw)) <- exprAnn\$ProbeID\\
+}
+\\
+We refer the user to the package \texttt{Biobase} for a more detail and complete description of this class of objects.
+
+\subsection{Preprocessing aCGH data}
+\null
+Here, we shortly illustrate steps for preprocessing aCGH data. Of course, this is only one way to proceed and
+different algorithms can be employed for different steps. 
+In what follows, the user can find supplementary information within documentation of packages \texttt{CGHcall} and \texttt{sigaR}.
+
+\subsubsection{Create an ``cghRaw'' object}
+\null
+Consider a \textsl{data.frame} \texttt{cgh} where the first three columns contains the chromosome number, start and end position in bp (respectively),
+and where the following columns are the log$_2$-ratios for each sample. Then, the raw aCGH data can be organized into an ``cghRaw'' object as follows:\\
+\\
+\texttt{
+\# Raw object\\
+cghraw <- make\_cghRaw(cgh)\\
+cghraw\\
+\\
+\# Some available methods\\
+copynumber(cghraw)
+chromosomes(cghraw)\\
+bpstart(cghraw)\\
+bpend(cghraw)\\
+\\
+}
+\null
+Now, it is possible to use the R functions from package \texttt{CGHcall}.
+
+\subsubsection{Multi-step preprocessing of aCGH data}
+\null
+The preprocessing of copy number data usually consists in three steps: normalization, segmentation and calling (see \cite{leday2012}).
+The normalization aims to remove technical variability and make samples comparable. This step outputs normalized
+log$_2$-values.\\
+\\
+\texttt{
+\# Imputation of missing values\\
+cghprepro <- preprocess(cghraw, maxmiss = 30, nchrom = 22)\\
+\\
+\# Mode normalization\\
+cghnorm <- normalize(cghprepro, method = "median")\\
+\\
+}
+\null
+The segmentation consists in partitioning the genome of each sample into segments of constant log$_2$-values.
+A common method to do so is the algorithm of \cite{olshen2004}.\\
+\\
+\texttt{
+\# Segmentation using the CBS method of Olshen\\
+cghseg <- segmentData(cghnorm, method = "DNAcopy")\\
+\\
+}
+\null
+Finally, calling attributes an aberration state to each segment.
+CGHcall is based on mixture models and classifies each segment into 3 (loss, normal and gain),
+4 (loss, normal, gain and amplification) or 5 (double losses, single loss, normal, gain and amplification)
+types of genomic aberrations. The number of aberration states is specified via argument \texttt{nclass}.\\
+\\
+\texttt{
+\# Calling using CGHcall\\
+res <- CGHcall(cghseg, nclass = 4, ncpus=8)\\
+cghcall <- ExpandCGHcall(res, cghseg)\\
+save(cghcall, file="cghcall.RData")\\
+\\
+}
+\null
+The final object \texttt{cghcall} contains all data  from previous steps. Here are some methods to access them:\\
+\\
+\texttt{
+\# Some methods\\
+norm <- copynumber(cghcall)\\
+seg <- segmented(cghcall)\\
+cal <- calls(cghcall)\\
+\\
+\# Membership probabilities associated with calls\\
+ploss <- probloss(cghcall)\\
+pnorm <- probnorm(cghcall)\\
+pgain <- probgain(cghcall)\\
+pamp <- probamp(cghcall)\\
+\\
+}
+
+\newpage
+\subsection{Matching features of gene expression and copy number data}
+\null
+Matching of features is accomplished with package \texttt{sigaR}.
+There exists various methods of matching and we refer the interested reader to \cite{vanWieringen2012} for their introduction.
+Below we provide R code for the \textsl{DistanceAny} method with a window of 10,000 bp:\\
+\\
+\texttt{
+\# distanceAny matching:\\
+matchedIDs <- matchAnn2Ann(fData(cghcall)[,1], fData(cghcall)[,2],\\
+fData(cghcall)[,3], fData(GE)[,1], fData(GE)[,2], fData(GE)[,3],\\
+method = "distance", ncpus = 8, maxDist = 10000)\\
+\\
+\# add offset to distances (avoids infinitely large weights)\\
+matchedIDs <- lapply(matchedIDs, function(Z, offset){ Z[,3] <- Z[,3] + offset; return(Z) }, offset=1)\\
+\\
+\# extract ids for object subsetting\\
+matchedIDsGE <- lapply(matchedIDs, function(Z){ return(Z[, -2, drop=FALSE]) })\\
+matchedIDsCN <- lapply(matchedIDs, function(Z){ return(Z[, -1, drop=FALSE]) })\\
+\\
+\# generate matched objects\\
+GEdata <- ExpressionSet2weightedSubset(GE, matchedIDsGE, 1, 2, 3, ncpus = 8)\\
+CNdata <- cghCall2weightedSubset(cghcall, matchedIDsCN, 1, 2, 3, ncpus = 8)\\
+\\
+\# save matched data\\
+save(GEdata, CNdata, file="GECNmatched\_distanceAny10000.RData")\\
+\\
+}
+\null
+R code for other methods can be found in documentation of package \texttt{sigaR}.\\
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Breast cancer data}
 \null
 We use the breast cancer data of \cite{neve2006} that are available from the Bioconductor package
 ``Neve2006''. aCGH and gene expression for 50 samples (cell lines) were profiled with an OncoBAC
-and Affymetrix HG-U133A arrays. We preprocessed and matched data as follows.
+and Affymetrix HG-U133A arrays.  We preprocessed and matched data as follows.
 Data were segmented with the CBS algorithm of \cite{olshen2004} and discretized with CGHcall
 \cite{vandeWiel2007} (also available from Bioconductor). Matching of features was done using
 the Bioconductor package \texttt{sigaR} \cite{vanWieringen2012} and the \textit{distanceAny}
@@ -82,6 +216,8 @@ data with \textbf{matched} features:
 neveGE17
 neveCN17
 @
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
