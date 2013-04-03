@@ -1,5 +1,5 @@
 Package: plrs
-Version: 0.99.1
+Version: 1.0.0
 Type: Package
 Title: Piecewise Linear Regression Splines (PLRS) for the association
         between DNA copy number and gene expression
