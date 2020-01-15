@@ -8,8 +8,7 @@ Leday, G. G., van der Vaart, A. W., van Wieringen, W. N., and van de Wiel, M. A.
 
 ## Description
 
-The package implements a flexible class of models to decipher how DNA copy number abnormalities in cancer cells alter the mRNA gene expression level. This class of models aims to reflect the biological mechanism operating between these two molecular
-levels and help in identifying relevant markers.
+The package implements a flexible class of models to decipher how DNA copy number abnormalities in cancer cells alter the mRNA gene expression level. This class of models aims to reflect the biological mechanism operating between these two molecular levels and help identifying relevant markers.
 
 The statistical framework implemented in plrs allows integrative analysis of DNA copy number and mRNA expression data, which incorporates segmented and called aCGH data. The combined use of segmented and called aCGH data improves model flexibility and interpretability. The form of the relationship is allowed to vary per gene and model interpretation is ameliorated with biologically motivated constraints on the parameters. The package implements methods for model selection, interval estimation and testing the strength of the association.
 
