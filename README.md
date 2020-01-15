@@ -1,4 +1,4 @@
-This is a read-only mirror of the Bioconductor SVN repository. Package Homepage: http://bioconductor.org/packages/devel/bioc/html/plrs.html Bug Reports: https://support.bioconductor.org/p/new/post/?tag_val=plrs.
+Package Homepage: http://bioconductor.org/packages/devel/bioc/html/plrs.html 
 
 # plrs
 
