@@ -22,7 +22,7 @@ plrs.select(object, crit = ifelse(object@call.arg$constr,"osaic","aic"))
 \value{An object of class \code{\link{plrs.select-class}}
 }
 
-\author{Gwenael G.R. Leday \email{g.g.r.leday@vu.nl}}
+\author{Gwenaël G.R. Leday}
 
 %\note{}
 %\seealso{}

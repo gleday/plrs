@@ -51,5 +51,5 @@ add = FALSE, lty = 1, lin = FALSE, ...)
 \code{plot.plrs} plots the observed points, the fitted line and potentially the confidence band.
 }
 
-\author{Gwenael G.R. Leday \email{g.g.r.leday@vu.nl}}
+\author{Gwenaël G.R. Leday}
 

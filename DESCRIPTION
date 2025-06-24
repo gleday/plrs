@@ -1,17 +1,20 @@
 Package: plrs
-Version: 1.15.0
+Version: 1.16.0
 Type: Package
 Title: Piecewise Linear Regression Splines (PLRS) for the association
         between DNA copy number and gene expression
-Author: Gwenael G.R. Leday
-Maintainer: Gwenael G.R. Leday to <gleday@few.vu.nl>
-Depends: R (>= 2.10), Biobase
+Authors@R: person(
+    given = "Gwenaël G.R.",
+    family = "Leday",
+    email = "gwenael.leday@proton.me",
+    role = c("aut", "cre"),
+    comment = c(ORCID = "0000-0002-3753-4060")
+    )
+Depends: R (>= 3.1.0), Biobase
 Imports: BiocGenerics, CGHbase, graphics, grDevices, ic.infer, marray,
-        methods, quadprog, Rcsdp, stats, stats4, utils
-Suggests: mvtnorm, methods
-Description: The present package implements a flexible framework for
-        modeling the relationship between DNA copy number and gene
-        expression data using Piecewise Linear Regression Splines
+        methods, quadprog, Rcsdp, stats, stats4, utils, CGHcall
+Description: Modeling the relationship between DNA copy number and gene
+        expression using Piecewise Linear Regression Splines
         (PLRS).
-License: GPL (>=2.0)
-biocViews: Regression
+License: GPL-3
+Encoding: UTF-8

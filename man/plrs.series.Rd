@@ -68,7 +68,7 @@ If \code{control.select = NULL} then no model selection is done. \cr
 
 \value{An object of class \code{\link{plrs.series-class}}}
 
-\author{Gwenael G.R. Leday \email{g.g.r.leday@vu.nl}}
+\author{Gwenaël G.R. Leday}
 
 %\note{}
 %\seealso{}
@@ -81,7 +81,7 @@ narray <- 48
 rna <- dnaseg <- dnacal <- matrix(NA, ngenes, narray)
 idx <- sample(1:4, ngenes, replace=TRUE, prob=rep(1/4,4))
 for(i in 1:ngenes){
-	Sim <- plrs.sim(n=narray, states=idx[i], sigma=0.5)
+	Sim <- plrs.sim(n = narray, states = idx[i], sigma = 0.5)
 	rna[i,] <- Sim$expr
 	dnaseg[i,] <- Sim$seg
 	dnacal[i,] <- Sim$cal

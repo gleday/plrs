@@ -32,7 +32,7 @@ An object of class \code{\link{plrs-class} that contains CB information.}
 Leday GGR, Van der Vaart AW, Van Wieringen WN, Van de Wiel MA. Modeling association between DNA copy number and gene expression with constrained piecewise linear regression splines. Accepted for publication. \emph{Ann Appl Stat}. (2012).
 }
 
-\author{Gwenael G.R. Leday \email{g.g.r.leday@vu.nl}}
+\author{Gwenaël G.R. Leday}
 
 \seealso{
 \code{\link{plrs.test}}

@@ -29,7 +29,7 @@ criteria(obj, crit = "all")
   Hughes, A. W. and King, M. L. (2003). Model selection using AIC in the presence of one-sided information. \emph{J Stat Plan Infer}, 115(2): 397 411.
 }
 
-\author{Gwenael G.R. Leday \email{g.g.r.leday@vu.nl}}
+\author{Gwenaël G.R. Leday}
 
 %\note{}
 %\seealso{}

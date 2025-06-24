@@ -16,10 +16,6 @@
 the association between DNA copy number and \\ gene expression}
 \author{Gwena\"el G.R. Leday\\
 \\
-\texttt{g.g.r.leday@vu.nl}\\
-\\
-\normalsize{Department of Mathematics, VU University}\\
-\normalsize{De Boelelaan 1081a, 1081 HV Amsterdam, The Netherlands}\\}
 \date{}
 
 
@@ -235,21 +231,21 @@ We choose gene PITPNA for illustration:
 
 <<>>=
 # Index of gene PITPNA
-idx <- which(fData(neveGE17)$Symbol=="PITPNA")[1]
+idx <- which(Biobase::fData(neveGE17)$Symbol=="PITPNA")[1]
 @
 <<>>=
 # Obtain vectors of gene expression (normalized) and
 # copy number (segmented and called) data
-rna <- exprs(neveGE17)[idx,]
-cghseg <- segmented(neveCN17)[idx,]
-cghcall <- calls(neveCN17)[idx,]
+rna <- Biobase::exprs(neveGE17)[idx,]
+cghseg <- CGHbase::segmented(neveCN17)[idx,]
+cghcall <- CGHbase::calls(neveCN17)[idx,]
 @
 <<>>=
 # Obtain vectors of posterior membership probabilities
-probloss <- probloss(neveCN17)[idx,]
-probnorm <- probnorm(neveCN17)[idx,]
-probgain <- probgain(neveCN17)[idx,]
-probamp <- probamp(neveCN17)[idx,]
+probloss <- CGHbase::probloss(neveCN17)[idx,]
+probnorm <- CGHbase::probnorm(neveCN17)[idx,]
+probgain <- CGHbase::probgain(neveCN17)[idx,]
+probamp <- CGHbase::probamp(neveCN17)[idx,]
 @
 \null
 Posterior probabilities are used for determining knots (or change points) of the model.

@@ -49,7 +49,7 @@ The constrained least squares problem is solved using function \code{solve.QP} o
 
 %\references{}
 
-\author{Gwenael G.R. Leday \email{g.g.r.leday@vu.nl}}
+\author{Gwenaël G.R. Leday}
 
 %\note{}
 %\seealso{}

@@ -28,7 +28,7 @@ To be written...
 
 %\value{}
 
-\author{Gwenael G.R. Leday \email{g.g.r.leday@vu.nl}}
+\author{Gwenaël G.R. Leday}
 
 \examples{
 

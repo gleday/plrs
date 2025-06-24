@@ -8,10 +8,6 @@
 
 \description{Normalized gene expression data of Neve et al. (2006) for chromosome 17.}
 
-\usage{
-neveGE17
-}
-
 \format{An object of class \code{\link[Biobase]{ExpressionSet}}}
 
 \source{
@@ -22,10 +18,8 @@ M. Neve et al. in Gray Lab at LBL. Neve2006: expression and CGH data on breast c
 	Neve, R.M. et al. (2006). A collection of breast cancer cell lines for the study of functionally distinct cancer subtypes. \emph{Cancer cell}, 10, 515-527.
 }
 
-
 \examples{
 data(neveGE17)
 dim(neveGE17)
-head(fData(neveGE17))
-
+head(Biobase::fData(neveGE17))
 }

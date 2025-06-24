@@ -37,7 +37,7 @@ are discarded (replaced by NAs).
   \item{val}{Vector of new called values}
 }
 
-\author{Gwenael G.R. Leday \email{g.g.r.leday@vu.nl}}
+\author{Gwenaël G.R. Leday}
 
 \note{
 This function is implemented within function \code{\link{plrs}} and \code{\link{plrs.series}}.

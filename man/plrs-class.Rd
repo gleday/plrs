@@ -53,6 +53,6 @@ An S4 class representing the output of the \code{\link{plrs}} function.
   }
 }
 
-\author{Gwenael G.R. Leday \email{g.g.r.leday@vu.nl}}
+\author{Gwenaël G.R. Leday}
 
 

@@ -50,7 +50,7 @@ Gromping, U. (2010). Inference with linear equality and inequality constraints u
 R: The package ic.infer. \emph{J Stat Softw}, 33(i10).
 }
 
-\author{Gwenael G.R. Leday  \email{g.g.r.leday@vu.nl}}
+\author{Gwenaël G.R. Leday}
 
 %\note{}
 %\seealso{}

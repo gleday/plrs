@@ -5,7 +5,11 @@
 \title{Piecewise Linear Regression Splines (PLRS) for the association between DNA copy number and mRNA expression}
 
 \description{
-The present package implements a framework for modeling the relationship between DNA copy number and gene expression data using Piecewise Linear Regression Splines (PLRS). It includes (point and interval) estimation, model selection and testing procedures for such models (possibly under biologically motivated constraints).
+The present package implements a framework for modeling the relationship
+between DNA copy number and gene expression data using Piecewise Linear
+Regression Splines (PLRS). It includes (point and interval) estimation,
+model selection and testing procedures for such models (possibly under
+biologically motivated constraints).
 }
 
 \details{
@@ -29,13 +33,14 @@ Note: This function extend the aforementioned univariate analysis genomewise in 
 }
 
 \author{
-Gwenael G.R. Leday
-
-Maintainer: Gwenael G.R. Leday \email{g.g.r.leday@vu.nl}
+Gwenaël G.R. Leday
 }
 
 \references{
-Leday GGR, Van der Vaart AW, Van Wieringen WN, Van de Wiel MA. Modeling association between DNA copy number and gene expression with constrained piecewise linear regression splines. Accepted for publication. \emph{Ann Appl Stat}. (2012).
+Leday GGR, Van der Vaart AW, Van Wieringen WN, Van de Wiel MA.
+Modeling association between DNA copy number and gene expression
+with constrained piecewise linear regression splines.
+\emph{The Annals of Applied Statistics}, 7(2), 823-845.
 }
 
 \keyword{copy number, gene expression, regression splines, model selection, constrained inference.}
